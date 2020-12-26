@@ -1,0 +1,11 @@
+
+cxxflags = -std=c++11 -Wall -O2 -g
+cxx = g++
+
+rule cxx
+    command = $cxx $cxxflags -o $out $in
+
+build pack_function_args_stupid: cxx pack_function_args_stupid.cpp
+
+build pack_function_args: cxx pack_function_args.cpp
+
