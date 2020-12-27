@@ -1,0 +1,12 @@
+
+cxx = g++
+
+rule cpp
+    command = $cxx -E -o ${out} $in
+
+rule polish
+    command = clang-format $in > $out
+
+build somecode_raw.ii: cpp somecode.cpp
+
+build somecode.ii: polish somecode_raw.ii
