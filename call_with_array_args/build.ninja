@@ -1,0 +1,13 @@
+
+CXX = g++
+CXXFLAGS = -O2 -g -Wall
+
+rule cxx11
+    command = $CXX -std=c++11 $CXXFLAGS -o $out $in
+
+rule cxx14
+    command = $CXX -std=c++14 $CXXFLAGS -o $out $in
+
+build call_with_array_args_cxx11: cxx11 call_with_array_args.cpp
+
+build call_with_array_args_cxx14: cxx14 call_with_array_args.cpp
