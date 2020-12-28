@@ -1,0 +1,8 @@
+
+CXX = g++
+CXXFLAGS = -O2 -g -Wall
+
+rule cxx14
+    command = $CXX -std=c++14 $CXXFLAGS -o $out $in
+
+build tuple_unpack: cxx14 tuple_unpack.cpp
