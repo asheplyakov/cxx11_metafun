@@ -1,0 +1,13 @@
+
+CXX = g++
+CXXFLAGS = -O2 -g -Wall
+
+rule cxx11
+    command = $CXX -std=c++11 $CXXFLAGS -Ivariant/include -o $out $in
+
+rule cxx14
+    command = $CXX -std=c++14 $CXXFLAGS -Ivariant/include -o $out $in
+
+build funcptr_variant_cxx11: cxx11 funcptr_variant.cpp
+
+build funcptr_variant_cxx14: cxx14 funcptr_variant.cpp

@@ -1,0 +1,3 @@
+[submodule "funcptr_variant/variant"]
+	path = funcptr_variant/variant
+	url = git://github.com/mapbox/variant.git
