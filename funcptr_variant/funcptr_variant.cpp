@@ -95,7 +95,8 @@ template<int... S> struct double_funcp_helper<seq<S...>> {
 		typename nary_func_declarator<double, double, S>::type...>
 		type;
 };
-using double_funcp = double_funcp_helper<typename genseq<4>::type>::type;
+constexpr unsigned MAX_PARAM = 4;
+using double_funcp = double_funcp_helper<typename genseq<MAX_PARAM>::type>::type;
 
 
 struct EvalVisitor {
@@ -109,23 +110,26 @@ struct EvalVisitor {
 };
 
 static double minkowski(double t, double x, double y) {
-	std::printf("called with t=%g, x=%g, y=%g\n", t, x, y);
+	std::printf("%s called with t=%g, x=%g, y=%g\n", __func__, t, x, y);
 	return t*t - x*x - y*y;
 }
 
 static inline double mysin(double x) {
-	std::printf("called with x=%g\n", x);
+	std::printf("%s called with x=%g\n", __func__, x);
 	return std::sin(x);
 }
 
 int main(void) {
-	std::vector<double> args = { 5.0, 3.0, 4.0 };
-	double_funcp fp = &minkowski;
-	EvalVisitor visitor{args};
-	mapbox::util::apply_visitor(visitor, fp);
-	auto distance = visitor.val_;
-	double_funcp sinp = &mysin;
-	mapbox::util::apply_visitor(visitor, sinp);
-	return distance != 0.0;
+	std::vector<std::tuple<double_funcp, std::vector<double>>> calls = {
+		{ &minkowski, {5.0, 3.0, 4.0}},
+		{ &mysin, {1.0}},
+	};
+	std::vector<double> results;
+	for (auto& call: calls) {
+		EvalVisitor visitor{std::get<1>(call)};
+		mapbox::util::apply_visitor(visitor, std::get<0>(call));
+		results.emplace_back(visitor.val_);
+	}
+	return results[0] != 0.0;
 }
 // compile: g++ -std=c++11 -O2 -g -Wall array_unpack.cc
