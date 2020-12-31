@@ -89,14 +89,14 @@ template<typename ValT, typename ArgsT, int N> struct nary_func_declarator {
 // typedef double (*ternary_double_funcp)(double, double, double, double);
 // think of double (*double_funcp_8)(double, double, double, double, double, double, double, double);
 
-template<typename T> struct double_funcp_helper;
-template<int... S> struct double_funcp_helper<seq<S...>> {
+template<typename ValT, typename ArgT, typename X> struct double_funcp_helper;
+template<typename ValT, typename ArgT, int... S> struct double_funcp_helper<ValT, ArgT, seq<S...>> {
 	typedef mapbox::util::variant<
-		typename nary_func_declarator<double, double, S>::type...>
+		typename nary_func_declarator<ValT, ArgT, S>::type...>
 		type;
 };
 constexpr unsigned MAX_PARAM = 4;
-using double_funcp = double_funcp_helper<typename genseq<MAX_PARAM>::type>::type;
+using double_funcp = double_funcp_helper<double, double, typename genseq<MAX_PARAM>::type>::type;
 
 
 struct EvalVisitor {
