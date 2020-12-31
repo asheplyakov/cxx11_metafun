@@ -25,22 +25,22 @@ template<int N>
 struct array_unpacker {
 	using seq_type = typename genseq<N>::type;
 
-	template<typename F, typename C, int... S>
-	inline auto do_call(F& func, const C& params, seq<S...>)
+	template<typename F, typename C, typename... Rest, int... S>
+	inline auto do_call(F& func, const C& params, const Rest&... rest, seq<S...>)
 #if __cplusplus < 201402L
-	-> decltype(func(get<S>(params)...))
+	-> decltype(func(get<S>(params)..., rest...))
 #endif
 	{
-		return func(get<S>(params)...);
+		return func(get<S>(params)..., rest...);
 	}
 
-	template<typename F, typename C>
-	inline auto call(F& func, const C& params)
+	template<typename F, typename C, typename... Rest>
+	inline auto call(F& func, const C& params, const Rest&... rest)
 #if	__cplusplus < 201402L
-       	-> decltype(this->do_call(func, params, seq_type{})) 
+	-> decltype(this->do_call(func, params, rest..., seq_type{}))
 #endif
 	{
-		return do_call(func, params, seq_type{});
+		return do_call(func, params, rest..., seq_type{});
 	}
 
 };
@@ -62,22 +62,22 @@ constexpr unsigned get_arity(const F& func) {
 	return get_arity_s<F>::value;
 }
 
-template<typename F, typename C>
-static inline auto call_with_array(const F& f, const C& packed_args)
+template<typename F, typename C, typename... Rest>
+static inline auto call_with_array(const F& f, const C& packed_args, const Rest&... rest)
 #if __cplusplus < 201402L
-	-> decltype(array_unpacker<get_arity_s<F>::value>{}.call(f, packed_args))
+	-> decltype(array_unpacker<get_arity_s<F>::value>{}.call(f, packed_args, rest...))
 #endif
 {
-	return array_unpacker<get_arity_s<F>::value>{}.call(f, packed_args);
+	return array_unpacker<get_arity_s<F>::value>{}.call(f, packed_args, rest...);
 }
 
-template<typename ValT, typename ArgsT, int N> struct nary_func_declarator {
+template<typename ValT, typename ArgsT, int N, typename... Rest> struct nary_func_declarator {
 	template<int x> struct dummy {
 		typedef ArgsT type;
 	};
 	template<typename X> struct helper;
 	template<int... S> struct helper<seq<S...>> {
-		typedef ValT (*type)(typename dummy<S>::type...);
+		typedef ValT (*type)(typename dummy<S>::type..., Rest const&...);
 	};
 	typedef typename helper<typename genseq<N>::type>::type type;
 };
@@ -89,14 +89,15 @@ template<typename ValT, typename ArgsT, int N> struct nary_func_declarator {
 // typedef double (*ternary_double_funcp)(double, double, double, double);
 // think of double (*double_funcp_8)(double, double, double, double, double, double, double, double);
 
-template<typename ValT, typename ArgT, typename X> struct double_funcp_helper;
-template<typename ValT, typename ArgT, int... S> struct double_funcp_helper<ValT, ArgT, seq<S...>> {
+template<typename ValT, typename ArgT, typename X, typename... Rest> struct variant_funcp;
+template<typename ValT, typename ArgT, int... S, typename... Rest> struct variant_funcp<ValT, ArgT, seq<S...>, Rest...> {
 	typedef mapbox::util::variant<
-		typename nary_func_declarator<ValT, ArgT, S>::type...>
+		typename nary_func_declarator<ValT, ArgT, S, Rest...>::type...>
 		type;
 };
 constexpr unsigned MAX_PARAM = 4;
-using double_funcp = double_funcp_helper<double, double, typename genseq<MAX_PARAM>::type>::type;
+using double_funcp = variant_funcp<double, double, typename genseq<MAX_PARAM>::type>::type;
+using double_unsigned_funcp = variant_funcp<double, double, typename genseq<MAX_PARAM>::type, unsigned>::type;
 
 
 struct EvalVisitor {
@@ -117,6 +118,19 @@ static double minkowski(double t, double x, double y) {
 static inline double mysin(double x) {
 	std::printf("%s called with x=%g\n", __func__, x);
 	return std::sin(x);
+}
+
+static inline double mypow(double x, unsigned n) {
+	double ret = 1.0;
+	std::printf("%s called with x=%g, n=%u\n", __func__, x, n);
+	while (n) {
+		if (n & 1) {
+			ret *= x;
+		}
+		n >>= 1;
+		x = x * x;
+	}
+	return ret;
 }
 
 int main(void) {
